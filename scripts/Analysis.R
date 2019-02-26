@@ -12,6 +12,7 @@ library(rnaturalearth)
 library(sf)
 library(ggspatial)
 library(cowplot)
+library(ggbeeswarm)
 
 ####################
 ## Some functions ##
@@ -187,9 +188,9 @@ b <- ggplot(df.sf.clip) +
   geom_boxplot(aes(x = CWPCounty, y = as.numeric(CWPTotalDesignFlowNmbr), 
                    fill = CWPCounty),
                alpha = 0.35, outlier.shape = NA) +
-  geom_jitter(aes(x = CWPCounty, y = as.numeric(CWPTotalDesignFlowNmbr), 
+  geom_quasirandom(aes(x = CWPCounty, y = as.numeric(CWPTotalDesignFlowNmbr), 
                   color = CWPCounty), 
-              width = 0.15, alpha = 0.5) + 
+              varwidth = TRUE, alpha = 0.5) + 
   scale_y_log10() +
   theme_ipsum_rc(base_size = 24,
                  axis_text_size = 18,
@@ -231,7 +232,7 @@ df_reports <- df_reports %>%
 df_reports <- tidyr::unnest(df_reports, dmr)  
 
 ## uncomment to save the data
-## feather::write_feather(df_reports, here::here("data/df_reports.feather"))  
+##feather::write_feather(df_reports, here::here("data/df_reports.feather"))  
 
 ######################################################
 ## Fit a GAMM to average permitted flow exceedances ##
@@ -243,6 +244,7 @@ df_reports_avgflow <-  df_reports %>%
   mutate(exceeded = case_when(
     dmr_value_nmbr > limit_value_nmbr ~ 1,
     dmr_value_nmbr <= limit_value_nmbr ~ 0),
+    logDesignFlow = log(CWPTotalDesignFlowNmbr),
     month = lubridate::month(monitoring_period_end_date),
     year = lubridate::year(monitoring_period_end_date),
     dyear = lubridate::decimal_date(monitoring_period_end_date),
@@ -261,17 +263,21 @@ ggplot(df_reports_avgflow, aes(CWPTotalDesignFlowNmbr, exceeded)) +
   geom_jitter(height = 0.05, alpha = 0.25) +
   binomial_smooth(formula = y ~ splines::ns(x, 3))
 
+ggplot(df_reports_avgflow, aes(logDesignFlow, exceeded)) +
+  geom_jitter(height = 0.05, alpha = 0.25) +
+  binomial_smooth(formula = y ~ splines::ns(x, 3))
+
 ggplot(df_reports_avgflow, aes(month, exceeded)) +
   geom_jitter(height = 0.05, alpha = 0.25) +
   binomial_smooth(formula = y ~ splines::ns(x, 3))
 
-ggplot(df_reports_avgflow, aes(limit_value_nmbr, color = as.factor(exceeded))) +
+ggplot(df_reports_avgflow, aes(logDesignFlow, color = as.factor(exceeded))) +
   geom_line(stat = "density") 
 
-ggplot(df_reports_flow, aes(dyear, color = as.factor(exceeded))) +
+ggplot(df_reports_avgflow, aes(dyear, color = as.factor(exceeded))) +
   geom_line(stat = "density")
 
-m1 <- gamm4(exceeded ~ s(dyear) + s(month, bs = "cc") + s(CWPTotalDesignFlowNmbr),
+m1 <- gamm4(exceeded ~ s(dyear) + s(month, bs = "cc") + s(logDesignFlow),
             random = ~(1|block),
             data = df_reports_avgflow,
             family = binomial(link = "logit"))
@@ -294,7 +300,8 @@ newframe <- data_grid(df_reports_avgflow,
 
 newframe <- newframe %>%
   mutate(dyear = lubridate::decimal_date(monitoring_period_end_date),
-         month = lubridate::month(monitoring_period_end_date))
+         month = lubridate::month(monitoring_period_end_date),
+         logDesignFlow = log(CWPTotalDesignFlowNmbr))
 
 ## Make predictions
 
@@ -349,7 +356,7 @@ ggplot() +
           lwd = 0.1, alpha = 0.75) +
   geom_sf(data = roadssf.errors, alpha = 0.50, color = "wheat") +
   geom_sf(data = df.errors,
-          alpha = 0.7) +
+          alpha = 0.7, size = 2) +
   annotation_north_arrow(which_north = "true",
                          location = "bl",
                          style = north_arrow_minimal(text_family = "Roboto Condensed")) +
@@ -363,4 +370,4 @@ ggplot() +
   scale_fill_brewer(type = "qual", palette = "Dark2") +
   labs(x = "", y = "")
 
-ggsave(here::here("figures/fig3.png"), width = 12, height = 8, units = "in", dpi = 300)
+#ggsave(here::here("figures/fig3.png"), width = 12, height = 8, units = "in", dpi = 300)
