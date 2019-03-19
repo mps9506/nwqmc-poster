@@ -173,8 +173,8 @@ a <- ggplot() +
              breaks = c(1,10,50,100,150,200)) +
   scale_color_viridis_c(option = "D", direction = -1, breaks = c(1,10,50,100,150,200)) +
   guides(color = guide_legend("Design Flow\n(MGD)"), size = guide_legend("Design Flow\n(MGD)")) +
-  theme_ipsum_rc(base_size = 24,
-                 axis_text_size = 14,
+  theme_ipsum_rc(base_size = 28,
+                 axis_text_size = 28,
                  caption_size = 20,
                  plot_margin = margin(5, 5, 5, 5)) +
   theme(legend.position = "bottom",
@@ -190,20 +190,20 @@ b <- ggplot(df.sf.clip) +
                alpha = 0.35, outlier.shape = NA) +
   geom_quasirandom(aes(x = CWPCounty, y = as.numeric(CWPTotalDesignFlowNmbr), 
                   color = CWPCounty), 
-              varwidth = TRUE, alpha = 0.5) + 
+              varwidth = TRUE, alpha = 0.5, size = 3) + 
   scale_y_log10() +
-  theme_ipsum_rc(base_size = 24,
-                 axis_text_size = 18,
-                 axis_title_size = 24,
+  theme_ipsum_rc(base_size = 28,
+                 axis_text_size = 28,
+                 axis_title_size = 28,
                  axis_title_just = "c",
                  caption_size = 20,
-                 plot_margin = margin(5, 5, 5, 5)) +
+                 plot_margin = margin(10, 5, 5, 5)) +
   theme(legend.position = "none") +
   coord_flip() +
   labs(x = "County", y = "Design Flow (MGD)")
 
-plot_grid(a, b, labels = "AUTO", label_fontfamily = "Roboto Condensed", nrow = 1)
-##ggsave(here::here("figures/fig1.png"), width = 18, height = 10, units = "in", dpi = 300)
+plot_grid(a, b, labels = "AUTO", label_fontfamily = "Roboto Condensed", label_size = 30, nrow = 1)
+ggsave(here::here("figures/fig1.png"), width = 18, height = 13, units = "in", dpi = 300)
 
 ##############################################
 ## Download DMRs !!! This takes a while !!! ##
@@ -277,7 +277,7 @@ ggplot(df_reports_avgflow, aes(logDesignFlow, color = as.factor(exceeded))) +
 ggplot(df_reports_avgflow, aes(dyear, color = as.factor(exceeded))) +
   geom_line(stat = "density")
 
-m1 <- gamm4(exceeded ~ s(dyear) + s(month, bs = "cc") + s(logDesignFlow),
+m1 <- gamm4(exceeded ~ s(dyear) + s(month, bs = "cc") + s(CWPTotalDesignFlowNmbr),
             random = ~(1|block),
             data = df_reports_avgflow,
             family = binomial(link = "logit"))
@@ -312,7 +312,7 @@ ggplot(data = newframe, aes(dyear, CWPTotalDesignFlowNmbr)) +
   geom_raster(aes(fill = predict)) +
   scale_fill_viridis_c(option = "C", name = "Probability of\nexceedance") +
   guides(fill = guide_colorbar(barheight = 20)) +
-  theme_ipsum_rc(base_size = 20,
+  theme_ipsum_rc(base_size = 28,
                  plot_title_size = 30,
                  subtitle_size = 24,
                  caption_size = 20,
@@ -321,8 +321,7 @@ ggplot(data = newframe, aes(dyear, CWPTotalDesignFlowNmbr)) +
   labs(x = "Date", y = "Plant Design Flow (mgd)")
 
 ## Uncomment to save
-
-## ggsave(here::here("figures/fig2.png"), width = 18, height = 6, units = "in", dpi = 300)
+ggsave(here::here("figures/fig2.png"), width = 18, height = 7, units = "in", dpi = 300)
 
 
 
@@ -370,4 +369,4 @@ ggplot() +
   scale_fill_brewer(type = "qual", palette = "Dark2") +
   labs(x = "", y = "")
 
-#ggsave(here::here("figures/fig3.png"), width = 12, height = 8, units = "in", dpi = 300)
+ggsave(here::here("figures/fig3.png"), width = 12, height = 8.5, units = "in", dpi = 300)
